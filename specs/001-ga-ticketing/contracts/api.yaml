@@ -1,0 +1,948 @@
+openapi: 3.0.3
+info:
+  title: GA Ticketing System API
+  description: General Affairs ticketing system for service requests, approvals, and asset management
+  version: 1.0.0
+  contact:
+    name: GA Team
+    email: ga@company.com
+servers:
+  - url: https://api.company.com/v1
+    description: Production server
+  - url: https://staging-api.company.com/v1
+    description: Staging server
+  - url: http://localhost:8080/v1
+    description: Development server
+
+paths:
+  # Authentication endpoints
+  /auth/login:
+    post:
+      summary: Authenticate user and return JWT token
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successful authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/refresh:
+    post:
+      summary: Refresh JWT token
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Ticket endpoints
+  /tickets:
+    get:
+      summary: Get list of tickets based on user role
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/StatusFilter'
+        - $ref: '#/components/parameters/CategoryFilter'
+        - $ref: '#/components/parameters/PriorityFilter'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Tickets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Create a new service request ticket
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketCreateRequest'
+      responses:
+        '201':
+          description: Ticket created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /tickets/{ticketId}:
+    get:
+      summary: Get ticket details by ID
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      responses:
+        '200':
+          description: Ticket retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      summary: Update ticket details
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketUpdateRequest'
+      responses:
+        '200':
+          description: Ticket updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets/{ticketId}/assign:
+    post:
+      summary: Assign ticket to admin (Admin only)
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TicketAssignRequest'
+      responses:
+        '200':
+          description: Ticket assigned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets/{ticketId}/comments:
+    get:
+      summary: Get ticket comments
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentListResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Add comment to ticket
+      tags:
+        - Tickets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentCreateRequest'
+      responses:
+        '201':
+          description: Comment added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommentResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets/{ticketId}/approve:
+    post:
+      summary: Approve ticket (Approver/Admin only)
+      tags:
+        - Approvals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '200':
+          description: Ticket approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /tickets/{ticketId}/reject:
+    post:
+      summary: Reject ticket (Approver/Admin only)
+      tags:
+        - Approvals
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/TicketId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalRequest'
+      responses:
+        '200':
+          description: Ticket rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # Asset endpoints
+  /assets:
+    get:
+      summary: Get list of assets (Admin only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetCategoryFilter'
+        - $ref: '#/components/parameters/AssetConditionFilter'
+        - $ref: '#/components/parameters/LocationFilter'
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+      responses:
+        '200':
+          description: Assets retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      summary: Create new asset (Admin only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetCreateRequest'
+      responses:
+        '201':
+          description: Asset created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /assets/{assetId}:
+    get:
+      summary: Get asset details (Admin only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      responses:
+        '200':
+          description: Asset retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    put:
+      summary: Update asset details (Admin only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetUpdateRequest'
+      responses:
+        '200':
+          description: Asset updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /assets/{assetId}/inventory:
+    post:
+      summary: Update asset inventory quantity (Admin only)
+      tags:
+        - Assets
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/AssetId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryUpdateRequest'
+      responses:
+        '200':
+          description: Inventory updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  # User endpoints
+  /users/profile:
+    get:
+      summary: Get current user profile
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    TicketId:
+      name: ticketId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the ticket
+
+    AssetId:
+      name: assetId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique identifier of the asset
+
+    StatusFilter:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [pending, waiting_approval, approved, rejected, in_progress, completed, closed]
+      description: Filter tickets by status
+
+    CategoryFilter:
+      name: category
+      in: query
+      schema:
+        type: string
+        enum: [office_supplies, facility_maintenance, pantry_supplies, meeting_room, office_furniture, general_service]
+      description: Filter tickets by category
+
+    PriorityFilter:
+      name: priority
+      in: query
+      schema:
+        type: string
+        enum: [low, medium, high]
+      description: Filter tickets by priority
+
+    AssetCategoryFilter:
+      name: category
+      in: query
+      schema:
+        type: string
+        enum: [office_furniture, office_supplies, pantry_supplies, facility_equipment, meeting_room_equipment, cleaning_supplies]
+      description: Filter assets by category
+
+    AssetConditionFilter:
+      name: condition
+      in: query
+      schema:
+        type: string
+        enum: [good, needs_maintenance, broken]
+      description: Filter assets by condition
+
+    LocationFilter:
+      name: location
+      in: query
+      schema:
+        type: string
+      description: Filter assets by location
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+  schemas:
+    # Authentication schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    # User schemas
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        employee_id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        department:
+          type: string
+        role:
+          type: string
+          enum: [requester, approver, admin]
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    # Ticket schemas
+    TicketCreateRequest:
+      type: object
+      required:
+        - title
+        - description
+        - category
+        - priority
+        - estimated_cost
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/TicketCategory'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        estimated_cost:
+          type: integer
+          minimum: 0
+          description: Estimated cost in Indonesian Rupiah
+
+    TicketUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        actual_cost:
+          type: integer
+          minimum: 0
+          description: Actual cost in Indonesian Rupiah
+
+    TicketAssignRequest:
+      type: object
+      properties:
+        admin_id:
+          type: string
+          format: uuid
+          description: ID of the admin to assign the ticket to
+
+    TicketResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ticket_number:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/TicketCategory'
+        priority:
+          $ref: '#/components/schemas/TicketPriority'
+        status:
+          $ref: '#/components/schemas/TicketStatus'
+        requester:
+          $ref: '#/components/schemas/UserResponse'
+        assigned_admin:
+          $ref: '#/components/schemas/UserResponse'
+        estimated_cost:
+          type: integer
+        actual_cost:
+          type: integer
+        requires_approval:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+
+    TicketListResponse:
+      type: object
+      properties:
+        tickets:
+          type: array
+          items:
+            $ref: '#/components/schemas/TicketResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Comment schemas
+    CommentCreateRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          maxLength: 1000
+
+    CommentResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserResponse'
+        created_at:
+          type: string
+          format: date-time
+
+    CommentListResponse:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommentResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Approval schemas
+    ApprovalRequest:
+      type: object
+      required:
+        - comments
+      properties:
+        comments:
+          type: string
+          maxLength: 500
+          description: Comments explaining the approval/rejection decision
+
+    # Asset schemas
+    AssetCreateRequest:
+      type: object
+      required:
+        - name
+        - description
+        - category
+        - quantity
+        - location
+        - unit_cost
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/AssetCategory'
+        quantity:
+          type: integer
+          minimum: 1
+        location:
+          type: string
+          maxLength: 255
+        unit_cost:
+          type: integer
+          minimum: 0
+          description: Unit cost in Indonesian Rupiah
+
+    AssetUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 255
+        description:
+          type: string
+        location:
+          type: string
+          maxLength: 255
+        condition:
+          $ref: '#/components/schemas/AssetCondition'
+        unit_cost:
+          type: integer
+          minimum: 0
+        last_maintenance_at:
+          type: string
+          format: date-time
+        next_maintenance_at:
+          type: string
+          format: date-time
+
+    InventoryUpdateRequest:
+      type: object
+      required:
+        - change_type
+        - quantity
+        - reason
+      properties:
+        change_type:
+          $ref: '#/components/schemas/ChangeType'
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity to add/remove/adjust
+        reason:
+          type: string
+          maxLength: 255
+          description: Reason for the inventory change
+
+    AssetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        asset_code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/AssetCategory'
+        quantity:
+          type: integer
+        available_quantity:
+          type: integer
+        location:
+          type: string
+        condition:
+          $ref: '#/components/schemas/AssetCondition'
+        unit_cost:
+          type: integer
+        last_maintenance_at:
+          type: string
+          format: date-time
+        next_maintenance_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AssetListResponse:
+      type: object
+      properties:
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetResponse'
+        pagination:
+          $ref: '#/components/schemas/PaginationInfo'
+
+    # Enum schemas
+    TicketCategory:
+      type: string
+      enum: [office_supplies, facility_maintenance, pantry_supplies, meeting_room, office_furniture, general_service]
+
+    TicketPriority:
+      type: string
+      enum: [low, medium, high]
+
+    TicketStatus:
+      type: string
+      enum: [pending, waiting_approval, approved, rejected, in_progress, completed, closed]
+
+    AssetCategory:
+      type: string
+      enum: [office_furniture, office_supplies, pantry_supplies, facility_equipment, meeting_room_equipment, cleaning_supplies]
+
+    AssetCondition:
+      type: string
+      enum: [good, needs_maintenance, broken]
+
+    ChangeType:
+      type: string
+      enum: [add, remove, adjust]
+
+    # Common schemas
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict - resource state conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'

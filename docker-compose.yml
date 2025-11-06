@@ -1,0 +1,29 @@
+
+version: '2.3'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: ga-ticketing-postgres
+    environment:
+      POSTGRES_DB: ga_ticketing
+      POSTGRES_USER: ga_user
+      POSTGRES_PASSWORD: ga_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+
+  redis:
+    image: redis:7-alpine
+    container_name: ga-ticketing-redis
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
+volumes:
+  postgres_data:
+  redis_data:

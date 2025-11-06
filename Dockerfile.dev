@@ -1,0 +1,35 @@
+# Development Dockerfile
+FROM golang:1.22-alpine
+
+# Install dependencies
+RUN apk add --no-cache \
+    git \
+    make \
+    gcc \
+    musl-dev \
+    postgresql-client \
+    curl
+
+# Set working directory
+WORKDIR /app
+
+# Install development tools
+RUN go install github.com/cosmtrek/air@latest && \
+    go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest && \
+    go install github.com/swaggo/swag/cmd/swag@latest && \
+    go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Expose ports
+EXPOSE 8080 9090
+
+# Default command
+CMD ["air"]

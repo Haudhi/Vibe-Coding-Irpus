@@ -1,0 +1,492 @@
+{
+  "info": {
+    "name": "GA Ticketing System API",
+    "description": "Postman collection for GA Ticketing System API testing",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "ga-ticketing-api-v1"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@company.com\",\n  \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "auth", "refresh"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tickets",
+      "item": [
+        {
+          "name": "Get Tickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets?status=pending&category=office_supplies&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending",
+                  "description": "Filter by ticket status"
+                },
+                {
+                  "key": "category",
+                  "value": "office_supplies",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Request for Office Supplies\",\n  \"description\": \"Need new notebooks and pens for the team\",\n  \"category\": \"office_supplies\",\n  \"priority\": \"medium\",\n  \"estimated_cost\": 250000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Ticket",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"in_progress\",\n  \"actual_cost\": 275000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"admin_id\": \"{{adminId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}", "assign"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Ticket Comments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}/comments?page=1&limit=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}", "comments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Working on your request now. Will update soon.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}", "comments"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Approvals",
+      "item": [
+        {
+          "name": "Approve Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comments\": \"Approved within budget. Request is valid and necessary.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Ticket",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comments\": \"Budget exceeded. Please revise the request or provide additional justification.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tickets/{{ticketId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "tickets", "{{ticketId}}", "reject"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assets",
+      "item": [
+        {
+          "name": "Get Assets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/assets?category=office_supplies&condition=good&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "assets"],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "office_supplies"
+                },
+                {
+                  "key": "condition",
+                  "value": "good"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Asset",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Office Notebook A4\",\n  \"description\": \"High-quality A4 notebook for general office use\",\n  \"category\": \"office_supplies\",\n  \"quantity\": 100,\n  \"location\": \"Stationery Cabinet - Floor 3\",\n  \"unit_cost\": 25000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/assets",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "assets"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Asset Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/assets/{{assetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "assets", "{{assetId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Asset",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 85,\n  \"condition\": \"good\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/assets/{{assetId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "assets", "{{assetId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Inventory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"change_type\": \"remove\",\n  \"quantity\": 15,\n  \"reason\": \"Issued to IT team for project documentation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/assets/{{assetId}}/inventory",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "assets", "{{assetId}}", "inventory"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "users", "profile"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "ticketId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "assetId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "adminId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+# Go-specific files
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+coverage.out
+coverage.html
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Environment and configuration
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+*.env
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Build artifacts
+dist/
+build/
+bin/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Air hot reload
+.air.toml
+tmp/
+
+# Migration files backup
+*.sql.bak
+
+# Performance profiling
+*.prof
+*.pprof
+
+# Security
+*.key
+*.pem
+*.crt
+*.p12
+
+# Kubernetes secrets
+secrets/
+*.secret.yaml
