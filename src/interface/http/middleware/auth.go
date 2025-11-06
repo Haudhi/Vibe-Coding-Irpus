@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/render"
@@ -9,6 +10,19 @@ import (
 
 	"github.com/company/ga-ticketing/src/infrastructure/auth"
 )
+
+// User represents the authenticated user in the context
+type User struct {
+	ID    string
+	Email string
+	Name  string
+	Role  string
+}
+
+// userContextKey is the key used to store user in context
+type userContextKey string
+
+const userKey userContextKey = "user"
 
 // AuthMiddleware handles JWT authentication
 type AuthMiddleware struct {
@@ -53,11 +67,15 @@ func (m *AuthMiddleware) Authenticate(next http.Handler) http.Handler {
 			return
 		}
 
-		// Add user info to context
-		ctx := context.WithValue(r.Context(), "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "user_role", claims.Role)
-		ctx = context.WithValue(ctx, "user_email", claims.Email)
-		ctx = context.WithValue(ctx, "user_name", claims.Name)
+		// Create user struct and add to context
+		user := &User{
+			ID:    claims.UserID,
+			Email: claims.Email,
+			Name:  claims.Name,
+			Role:  claims.Role,
+		}
+
+		ctx := context.WithValue(r.Context(), userKey, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -246,4 +264,13 @@ func getRolePermissions(role string) []string {
 	default:
 		return []string{}
 	}
+}
+
+// GetUserFromContext retrieves the user from the request context
+func GetUserFromContext(ctx context.Context) (*User, error) {
+	user, ok := ctx.Value(userKey).(*User)
+	if !ok {
+		return nil, fmt.Errorf("user not found in context")
+	}
+	return user, nil
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/company/ga-ticketing/src/domain/entities"
@@ -52,16 +52,17 @@ func (r *PGApprovalRepository) FindByID(id string) (*entities.Approval, error) {
 		WHERE id = $1
 	`
 
-	var approval entities.Approval
+	var approvalID, ticketID, approverID, status string
 	var comments sql.NullString
+	var createdAt time.Time
 
 	err := r.db.QueryRow(context.Background(), query, id).Scan(
-		&approval.ID,
-		&approval.TicketID,
-		&approval.ApproverID,
-		&approval.Status,
+		&approvalID,
+		&ticketID,
+		&approverID,
+		&status,
 		&comments,
-		&approval.CreatedAt,
+		&createdAt,
 	)
 
 	if err != nil {
@@ -71,11 +72,36 @@ func (r *PGApprovalRepository) FindByID(id string) (*entities.Approval, error) {
 		return nil, fmt.Errorf("failed to find approval: %w", err)
 	}
 
-	if comments.Valid {
-		approval.Comments = comments.String
+	// Create approval entity using database values
+	approval, err := entities.NewApproval(ticketID, approverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create approval entity: %w", err)
 	}
 
-	return &approval, nil
+	// Set the status based on database value
+	approvalStatus, err := entities.ValidateStatus(status)
+	if err != nil {
+		return nil, fmt.Errorf("invalid approval status in database: %w", err)
+	}
+
+	// Set comments if present
+	commentStr := ""
+	if comments.Valid {
+		commentStr = comments.String
+	}
+
+	// Apply the status to the approval
+	if approvalStatus == entities.ApprovalStatusApproved {
+		if err := approval.Approve(commentStr); err != nil {
+			return nil, fmt.Errorf("failed to set approval status: %w", err)
+		}
+	} else if approvalStatus == entities.ApprovalStatusRejected {
+		if err := approval.Reject(commentStr); err != nil {
+			return nil, fmt.Errorf("failed to set approval status: %w", err)
+		}
+	}
+
+	return approval, nil
 }
 
 // FindByTicketID retrieves all approvals for a specific ticket
@@ -95,26 +121,52 @@ func (r *PGApprovalRepository) FindByTicketID(ticketID string) ([]*entities.Appr
 
 	var approvals []*entities.Approval
 	for rows.Next() {
-		var approval entities.Approval
+		var approvalID, ticketID, approverID, status string
 		var comments sql.NullString
+		var createdAt time.Time
 
 		err := rows.Scan(
-			&approval.ID,
-			&approval.TicketID,
-			&approval.ApproverID,
-			&approval.Status,
+			&approvalID,
+			&ticketID,
+			&approverID,
+			&status,
 			&comments,
-			&approval.CreatedAt,
+			&createdAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan approval: %w", err)
 		}
 
-		if comments.Valid {
-			approval.Comments = comments.String
+		// Create approval entity using database values
+		approval, err := entities.NewApproval(ticketID, approverID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create approval entity: %w", err)
 		}
 
-		approvals = append(approvals, &approval)
+		// Set the status based on database value
+		approvalStatus, err := entities.ValidateStatus(status)
+		if err != nil {
+			return nil, fmt.Errorf("invalid approval status in database: %w", err)
+		}
+
+		// Set comments if present
+		commentStr := ""
+		if comments.Valid {
+			commentStr = comments.String
+		}
+
+		// Apply the status to the approval
+		if approvalStatus == entities.ApprovalStatusApproved {
+			if err := approval.Approve(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		} else if approvalStatus == entities.ApprovalStatusRejected {
+			if err := approval.Reject(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		}
+
+		approvals = append(approvals, approval)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -141,26 +193,52 @@ func (r *PGApprovalRepository) FindByApproverID(approverID string) ([]*entities.
 
 	var approvals []*entities.Approval
 	for rows.Next() {
-		var approval entities.Approval
+		var approvalID, ticketID, approverID, status string
 		var comments sql.NullString
+		var createdAt time.Time
 
 		err := rows.Scan(
-			&approval.ID,
-			&approval.TicketID,
-			&approval.ApproverID,
-			&approval.Status,
+			&approvalID,
+			&ticketID,
+			&approverID,
+			&status,
 			&comments,
-			&approval.CreatedAt,
+			&createdAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan approval: %w", err)
 		}
 
-		if comments.Valid {
-			approval.Comments = comments.String
+		// Create approval entity using database values
+		approval, err := entities.NewApproval(ticketID, approverID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create approval entity: %w", err)
 		}
 
-		approvals = append(approvals, &approval)
+		// Set the status based on database value
+		approvalStatus, err := entities.ValidateStatus(status)
+		if err != nil {
+			return nil, fmt.Errorf("invalid approval status in database: %w", err)
+		}
+
+		// Set comments if present
+		commentStr := ""
+		if comments.Valid {
+			commentStr = comments.String
+		}
+
+		// Apply the status to the approval
+		if approvalStatus == entities.ApprovalStatusApproved {
+			if err := approval.Approve(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		} else if approvalStatus == entities.ApprovalStatusRejected {
+			if err := approval.Reject(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		}
+
+		approvals = append(approvals, approval)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -187,26 +265,52 @@ func (r *PGApprovalRepository) FindPendingByApprover(approverID string) ([]*enti
 
 	var approvals []*entities.Approval
 	for rows.Next() {
-		var approval entities.Approval
+		var approvalID, ticketID, approverID, status string
 		var comments sql.NullString
+		var createdAt time.Time
 
 		err := rows.Scan(
-			&approval.ID,
-			&approval.TicketID,
-			&approval.ApproverID,
-			&approval.Status,
+			&approvalID,
+			&ticketID,
+			&approverID,
+			&status,
 			&comments,
-			&approval.CreatedAt,
+			&createdAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan approval: %w", err)
 		}
 
-		if comments.Valid {
-			approval.Comments = comments.String
+		// Create approval entity using database values
+		approval, err := entities.NewApproval(ticketID, approverID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create approval entity: %w", err)
 		}
 
-		approvals = append(approvals, &approval)
+		// Set the status based on database value
+		approvalStatus, err := entities.ValidateStatus(status)
+		if err != nil {
+			return nil, fmt.Errorf("invalid approval status in database: %w", err)
+		}
+
+		// Set comments if present
+		commentStr := ""
+		if comments.Valid {
+			commentStr = comments.String
+		}
+
+		// Apply the status to the approval
+		if approvalStatus == entities.ApprovalStatusApproved {
+			if err := approval.Approve(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		} else if approvalStatus == entities.ApprovalStatusRejected {
+			if err := approval.Reject(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		}
+
+		approvals = append(approvals, approval)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -233,26 +337,52 @@ func (r *PGApprovalRepository) FindPending() ([]*entities.Approval, error) {
 
 	var approvals []*entities.Approval
 	for rows.Next() {
-		var approval entities.Approval
+		var approvalID, ticketID, approverID, status string
 		var comments sql.NullString
+		var createdAt time.Time
 
 		err := rows.Scan(
-			&approval.ID,
-			&approval.TicketID,
-			&approval.ApproverID,
-			&approval.Status,
+			&approvalID,
+			&ticketID,
+			&approverID,
+			&status,
 			&comments,
-			&approval.CreatedAt,
+			&createdAt,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan approval: %w", err)
 		}
 
-		if comments.Valid {
-			approval.Comments = comments.String
+		// Create approval entity using database values
+		approval, err := entities.NewApproval(ticketID, approverID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create approval entity: %w", err)
 		}
 
-		approvals = append(approvals, &approval)
+		// Set the status based on database value
+		approvalStatus, err := entities.ValidateStatus(status)
+		if err != nil {
+			return nil, fmt.Errorf("invalid approval status in database: %w", err)
+		}
+
+		// Set comments if present
+		commentStr := ""
+		if comments.Valid {
+			commentStr = comments.String
+		}
+
+		// Apply the status to the approval
+		if approvalStatus == entities.ApprovalStatusApproved {
+			if err := approval.Approve(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		} else if approvalStatus == entities.ApprovalStatusRejected {
+			if err := approval.Reject(commentStr); err != nil {
+				return nil, fmt.Errorf("failed to set approval status: %w", err)
+			}
+		}
+
+		approvals = append(approvals, approval)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -272,16 +402,17 @@ func (r *PGApprovalRepository) FindByTicketAndApprover(ticketID, approverID stri
 		LIMIT 1
 	`
 
-	var approval entities.Approval
+	var approvalID, dbTicketID, dbApproverID, status string
 	var comments sql.NullString
+	var createdAt time.Time
 
 	err := r.db.QueryRow(context.Background(), query, ticketID, approverID).Scan(
-		&approval.ID,
-		&approval.TicketID,
-		&approval.ApproverID,
-		&approval.Status,
+		&approvalID,
+		&dbTicketID,
+		&dbApproverID,
+		&status,
 		&comments,
-		&approval.CreatedAt,
+		&createdAt,
 	)
 
 	if err != nil {
@@ -291,11 +422,36 @@ func (r *PGApprovalRepository) FindByTicketAndApprover(ticketID, approverID stri
 		return nil, fmt.Errorf("failed to find approval: %w", err)
 	}
 
-	if comments.Valid {
-		approval.Comments = comments.String
+	// Create approval entity using database values
+	approval, err := entities.NewApproval(dbTicketID, dbApproverID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create approval entity: %w", err)
 	}
 
-	return &approval, nil
+	// Set the status based on database value
+	approvalStatus, err := entities.ValidateStatus(status)
+	if err != nil {
+		return nil, fmt.Errorf("invalid approval status in database: %w", err)
+	}
+
+	// Set comments if present
+	commentStr := ""
+	if comments.Valid {
+		commentStr = comments.String
+	}
+
+	// Apply the status to the approval
+	if approvalStatus == entities.ApprovalStatusApproved {
+		if err := approval.Approve(commentStr); err != nil {
+			return nil, fmt.Errorf("failed to set approval status: %w", err)
+		}
+	} else if approvalStatus == entities.ApprovalStatusRejected {
+		if err := approval.Reject(commentStr); err != nil {
+			return nil, fmt.Errorf("failed to set approval status: %w", err)
+		}
+	}
+
+	return approval, nil
 }
 
 // Update updates an existing approval in the database

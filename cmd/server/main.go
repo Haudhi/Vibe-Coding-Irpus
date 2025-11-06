@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"time"
 	"encoding/json"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -69,6 +70,12 @@ func main() {
 
 	// API routes
 	r.Route("/api", func(r chi.Router) {
+		// Auth routes
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/login", handleLogin)
+			r.Get("/me", handleGetCurrentUser)
+		})
+
 		// Ticket routes (no authentication required)
 		r.Route("/tickets", func(r chi.Router) {
 			r.Get("/", handleGetTickets)
@@ -610,6 +617,126 @@ func handleUpdateAssetStock(w http.ResponseWriter, r *http.Request) {
 		"updated_at":        time.Now().Format(time.RFC3339),
 		"message":           "Stock updated successfully",
 	})
+}
+
+// Auth handlers
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{"error": "Invalid request format"})
+		return
+	}
+
+	// Validate input
+	if req.Email == "" {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{"error": "email is required"})
+		return
+	}
+	if req.Password == "" {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, map[string]string{"error": "password is required"})
+		return
+	}
+
+	// Mock user authentication based on test credentials from documentation
+	validUsers := map[string]map[string]interface{}{
+		"requester@company.com": {
+			"id":         "1",
+			"name":       "John Doe",
+			"role":       "requester",
+			"department": "Finance",
+			"password":   "password123",
+		},
+		"approver@company.com": {
+			"id":         "2",
+			"name":       "Jane Approver",
+			"role":       "approver",
+			"department": "Management",
+			"password":   "password123",
+		},
+		"admin@company.com": {
+			"id":         "3",
+			"name":       "Admin GA",
+			"role":       "admin",
+			"department": "General Affairs",
+			"password":   "password123",
+		},
+	}
+
+	userData, exists := validUsers[req.Email]
+	if !exists || userData["password"] != req.Password {
+		render.Status(r, http.StatusUnauthorized)
+		render.JSON(w, r, map[string]string{"error": "Invalid credentials"})
+		return
+	}
+
+	// Generate mock JWT token (in production, use proper JWT library)
+	token := fmt.Sprintf("mock-jwt-token-%d-%s", time.Now().Unix(), req.Email)
+
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, map[string]interface{}{
+		"token": token,
+		"user": map[string]interface{}{
+			"id":         userData["id"],
+			"email":      req.Email,
+			"name":       userData["name"],
+			"role":       userData["role"],
+			"department": userData["department"],
+			"created_at": "2025-01-15T10:30:00Z",
+		},
+	})
+}
+
+func handleGetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	// In a real implementation, extract and validate JWT token from Authorization header
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		render.Status(r, http.StatusUnauthorized)
+		render.JSON(w, r, map[string]string{"error": "Unauthorized"})
+		return
+	}
+
+	// Mock user response based on token
+	token := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Extract email from mock token
+	if strings.Contains(token, "requester@company.com") {
+		render.JSON(w, r, map[string]interface{}{
+			"id":         "1",
+			"email":      "requester@company.com",
+			"name":       "John Doe",
+			"role":       "requester",
+			"department": "Finance",
+			"created_at": "2025-01-15T10:30:00Z",
+		})
+	} else if strings.Contains(token, "approver@company.com") {
+		render.JSON(w, r, map[string]interface{}{
+			"id":         "2",
+			"email":      "approver@company.com",
+			"name":       "Jane Approver",
+			"role":       "approver",
+			"department": "Management",
+			"created_at": "2025-01-15T10:30:00Z",
+		})
+	} else if strings.Contains(token, "admin@company.com") {
+		render.JSON(w, r, map[string]interface{}{
+			"id":         "3",
+			"email":      "admin@company.com",
+			"name":       "Admin GA",
+			"role":       "admin",
+			"department": "General Affairs",
+			"created_at": "2025-01-15T10:30:00Z",
+		})
+	} else {
+		render.Status(r, http.StatusUnauthorized)
+		render.JSON(w, r, map[string]string{"error": "Invalid token"})
+	}
 }
 
 // initLogger initializes the application logger

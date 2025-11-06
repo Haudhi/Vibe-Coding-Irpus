@@ -9,6 +9,7 @@ import (
 
 	"github.com/company/ga-ticketing/src/application/dto"
 	"github.com/company/ga-ticketing/src/application/usecases"
+	"github.com/company/ga-ticketing/src/domain/entities"
 	"github.com/company/ga-ticketing/src/interface/http/middleware"
 )
 
@@ -68,13 +69,14 @@ func (h *ApprovalHandler) ApproveTicket(w http.ResponseWriter, r *http.Request) 
 
 	// Create approval request
 	approvalReq := &dto.ApproveTicketRequest{
-		TicketID: ticketID,
-		ApproverID: user.ID,
 		Comments: req.Comments,
 	}
 
+	// Convert user role to entities.UserRole
+	userRole := entities.UserRole(user.Role)
+
 	// Execute use case
-	result, err := h.approveUseCase.Execute(r.Context(), approvalReq)
+	result, err := h.approveUseCase.Execute(r.Context(), ticketID, user.ID, userRole, approvalReq)
 	if err != nil {
 		switch err.Error() {
 		case "ticket not found":
@@ -93,7 +95,8 @@ func (h *ApprovalHandler) ApproveTicket(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	render.JSON(w, http.StatusOK, result)
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, result)
 }
 
 // RejectTicket handles the rejection of a ticket
@@ -131,13 +134,14 @@ func (h *ApprovalHandler) RejectTicket(w http.ResponseWriter, r *http.Request) {
 
 	// Create rejection request
 	rejectionReq := &dto.RejectTicketRequest{
-		TicketID: ticketID,
-		ApproverID: user.ID,
-		Comments: req.Comments,
+		Reason: req.Comments,
 	}
 
+	// Convert user role to entities.UserRole
+	userRole := entities.UserRole(user.Role)
+
 	// Execute use case
-	result, err := h.rejectUseCase.Execute(r.Context(), rejectionReq)
+	result, err := h.rejectUseCase.Execute(r.Context(), ticketID, user.ID, userRole, rejectionReq)
 	if err != nil {
 		switch err.Error() {
 		case "ticket not found":
@@ -156,7 +160,8 @@ func (h *ApprovalHandler) RejectTicket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, http.StatusOK, result)
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, result)
 }
 
 // GetPendingApprovals handles retrieving all pending approvals for the current user
@@ -176,7 +181,8 @@ func (h *ApprovalHandler) GetPendingApprovals(w http.ResponseWriter, r *http.Req
 
 	// This would typically use a GetPendingApprovals use case
 	// For now, return an empty list
-	render.JSON(w, http.StatusOK, map[string]interface{}{
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, map[string]interface{}{
 		"pending_approvals": []interface{}{},
 		"count": 0,
 	})

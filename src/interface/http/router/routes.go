@@ -17,6 +17,8 @@ func SetupRouter(
 	assetHandler *handlers.AssetHandler,
 	approvalHandler *handlers.ApprovalHandler,
 	commentHandler *handlers.CommentHandler,
+	authHandler *handlers.AuthHandler,
+	authMiddleware *authmiddleware.AuthMiddleware,
 ) *chi.Mux {
 	r := chi.NewRouter()
 
@@ -33,54 +35,63 @@ func SetupRouter(
 	// Health check endpoint
 	r.Get("/health", healthCheck)
 
-	// API version 1 routes
-	r.Route("/v1", func(r chi.Router) {
-		// Authentication middleware for all v1 routes
-		r.Use(middleware.AuthMiddleware)
-
-		// Ticket routes
-		r.Route("/tickets", func(r chi.Router) {
-			r.Get("/", ticketHandler.GetTickets)
-			r.Post("/", ticketHandler.CreateTicket)
-
-			r.Route("/{ticketID}", func(r chi.Router) {
-				r.Get("/", ticketHandler.GetTicket)
-				r.Put("/", ticketHandler.UpdateTicket)
-				r.Post("/assign", ticketHandler.AssignTicket)
-
-				// Comment routes
-				r.Route("/comments", func(r chi.Router) {
-					r.Get("/", commentHandler.GetComments)
-					r.Post("/", commentHandler.AddComment)
-				})
-
-				// Approval routes
-				r.Route("/approval", func(r chi.Router) {
-					r.Use(approvalMiddleware) // Only approvers/admins can access
-					r.Post("/approve", approvalHandler.ApproveTicket)
-					r.Post("/reject", approvalHandler.RejectTicket)
-				})
-			})
+	// API routes with /api prefix
+	r.Route("/api", func(r chi.Router) {
+		// Auth routes (login doesn't require auth, but getting current user does)
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/login", authHandler.Login)
+			r.With(authMiddleware.Authenticate).Get("/me", authHandler.GetCurrentUser)
 		})
 
-		// Asset routes (admin only)
-		r.Route("/assets", func(r chi.Router) {
-			r.Use(adminMiddleware) // Only admins can access assets
+		// API version 1 routes (authentication required)
+		r.Route("/v1", func(r chi.Router) {
+			// Authentication middleware for all v1 routes
+			r.Use(authMiddleware.Authenticate)
 
-			r.Get("/", assetHandler.GetAssets)
-			r.Post("/", assetHandler.CreateAsset)
+			// Ticket routes
+			r.Route("/tickets", func(r chi.Router) {
+				r.Get("/", ticketHandler.GetTickets)
+				r.Post("/", ticketHandler.CreateTicket)
 
-			r.Route("/{assetID}", func(r chi.Router) {
-				r.Get("/", assetHandler.GetAsset)
-				r.Put("/", assetHandler.UpdateAsset)
-				r.Post("/inventory", assetHandler.UpdateInventory)
+				r.Route("/{ticketID}", func(r chi.Router) {
+					r.Get("/", ticketHandler.GetTicket)
+					r.Put("/", ticketHandler.UpdateTicket)
+					r.Post("/assign", ticketHandler.AssignTicket)
+
+					// Comment routes
+					r.Route("/comments", func(r chi.Router) {
+						r.Get("/", commentHandler.GetComments)
+						r.Post("/", commentHandler.AddComment)
+					})
+
+					// Approval routes
+					r.Route("/approval", func(r chi.Router) {
+						r.Use(authMiddleware.RequireOneOfRoles("approver", "admin")) // Only approvers/admins can access
+						r.Post("/approve", approvalHandler.ApproveTicket)
+						r.Post("/reject", approvalHandler.RejectTicket)
+					})
+				})
 			})
-		})
 
-		// Approval routes for approvers
-		r.Route("/approvals", func(r chi.Router) {
-			r.Use(approvalMiddleware) // Only approvers/admins can access
-			r.Get("/pending", approvalHandler.GetPendingApprovals)
+			// Asset routes (admin only)
+			r.Route("/assets", func(r chi.Router) {
+				r.Use(authMiddleware.RequireRole("admin")) // Only admins can access assets
+
+				r.Get("/", assetHandler.GetAssets)
+				r.Post("/", assetHandler.CreateAsset)
+
+				r.Route("/{assetID}", func(r chi.Router) {
+					r.Get("/", assetHandler.GetAsset)
+					r.Put("/", assetHandler.UpdateAsset)
+					r.Post("/inventory", assetHandler.UpdateInventory)
+				})
+			})
+
+			// Approval routes for approvers
+			r.Route("/approvals", func(r chi.Router) {
+				r.Use(authMiddleware.RequireOneOfRoles("approver", "admin")) // Only approvers/admins can access
+				r.Get("/pending", approvalHandler.GetPendingApprovals)
+			})
 		})
 	})
 
@@ -89,7 +100,8 @@ func SetupRouter(
 
 // healthCheck provides a simple health check endpoint
 func healthCheck(w http.ResponseWriter, r *http.Request) {
-	render.JSON(w, http.StatusOK, map[string]string{
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, map[string]string{
 		"status": "healthy",
 		"service": "ga-ticketing",
 	})

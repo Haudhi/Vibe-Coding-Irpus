@@ -9,6 +9,7 @@ import (
 
 	"github.com/company/ga-ticketing/src/application/dto"
 	"github.com/company/ga-ticketing/src/application/usecases"
+	"github.com/company/ga-ticketing/src/domain/entities"
 	"github.com/company/ga-ticketing/src/interface/http/middleware"
 )
 
@@ -68,14 +69,15 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create comment request
-	commentReq := &dto.AddCommentRequest{
-		TicketID: ticketID,
-		UserID:   user.ID,
-		Content:  req.Content,
+	commentReq := &dto.CommentRequest{
+		Content: req.Content,
 	}
 
+	// Convert user role to entities.UserRole
+	userRole := entities.UserRole(user.Role)
+
 	// Execute use case
-	result, err := h.addCommentUseCase.Execute(r.Context(), commentReq)
+	result, err := h.addCommentUseCase.Execute(r.Context(), ticketID, user.ID, userRole, commentReq)
 	if err != nil {
 		switch err.Error() {
 		case "ticket not found":
@@ -88,7 +90,8 @@ func (h *CommentHandler) AddComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, http.StatusCreated, result)
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, result)
 }
 
 // GetComments handles retrieving all comments for a ticket
@@ -133,5 +136,6 @@ func (h *CommentHandler) GetComments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, http.StatusOK, result)
+	render.Status(r, http.StatusOK)
+	render.JSON(w, r, result)
 }
